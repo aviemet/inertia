@@ -1,25 +1,30 @@
 import { useForm } from '@inertiajs/react'
 
+const methodNameTransforms = {
+  post: 'bar',
+  put: 'baz',
+  patch: 'foo',
+  delete: 'bar'
+}
+
 export default (props) => {
-  const form = useForm({ name: 'foo', remember: false })
+  const form = useForm({ name: 'foo', remember: false }, { transform: (data, method) => {
+    return { ...data, name: methodNameTransforms[method]}
+  }})
 
   const postForm = () => {
-    form.transform((data) => ({ ...data, name: 'bar' }))
     form.post('/dump/post')
   }
 
   const putForm = () => {
-    form.transform((data) => ({ ...data, name: 'baz' }))
     form.put('/dump/put')
   }
 
   const patchForm = () => {
-    form.transform((data) => ({ ...data, name: 'foo' }))
     form.patch('/dump/patch')
   }
 
   const deleteForm = () => {
-    form.transform((data) => ({ ...data, name: 'bar' }))
     form.delete('/dump/delete')
   }
 

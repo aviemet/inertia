@@ -7,6 +7,10 @@ type setDataByObject<TForm> = (data: TForm) => void
 type setDataByMethod<TForm> = (data: (previousData: TForm) => TForm) => void
 type setDataByKeyValuePair<TForm> = <K extends keyof TForm>(key: K, value: TForm[K]) => void
 type FormDataType = object
+type UseFormOptions<TForm> = {
+  rememberKey?: string
+  transform?: (data: TForm, method: Method) => object
+}
 
 export interface InertiaFormProps<TForm extends FormDataType> {
   data: TForm
@@ -18,7 +22,6 @@ export interface InertiaFormProps<TForm extends FormDataType> {
   wasSuccessful: boolean
   recentlySuccessful: boolean
   setData: setDataByObject<TForm> & setDataByMethod<TForm> & setDataByKeyValuePair<TForm>
-  transform: (callback: (data: TForm) => object) => void
   setDefaults(): void
   setDefaults(field: keyof TForm, value: FormDataConvertible): void
   setDefaults(fields: Partial<TForm>): void
@@ -34,32 +37,26 @@ export interface InertiaFormProps<TForm extends FormDataType> {
   delete: (url: string, options?: VisitOptions) => void
   cancel: () => void
 }
-export default function useForm<TForm extends FormDataType>(initialValues?: TForm): InertiaFormProps<TForm>
+
 export default function useForm<TForm extends FormDataType>(
-  rememberKey: string,
-  initialValues?: TForm,
-): InertiaFormProps<TForm>
-export default function useForm<TForm extends FormDataType>(
-  rememberKeyOrInitialValues?: string | TForm,
-  maybeInitialValues?: TForm,
+  initialValues: TForm = {} as TForm,
+  useFormOptions: UseFormOptions<TForm>  = {
+    transform: (data) => data
+  }
 ): InertiaFormProps<TForm> {
   const isMounted = useRef(null)
-  const rememberKey = typeof rememberKeyOrInitialValues === 'string' ? rememberKeyOrInitialValues : null
-  const [defaults, setDefaults] = useState(
-    (typeof rememberKeyOrInitialValues === 'string' ? maybeInitialValues : rememberKeyOrInitialValues) || ({} as TForm),
-  )
+  const [defaults, setDefaults] = useState(initialValues)
   const cancelToken = useRef(null)
   const recentlySuccessfulTimeoutId = useRef(null)
-  const [data, setData] = rememberKey ? useRemember(defaults, `${rememberKey}:data`) : useState(defaults)
-  const [errors, setErrors] = rememberKey
-    ? useRemember({} as Partial<Record<keyof TForm, string>>, `${rememberKey}:errors`)
+  const [data, setData] = useFormOptions?.rememberKey ? useRemember(defaults, `${useFormOptions?.rememberKey}:data`) : useState(defaults)
+  const [errors, setErrors] = useFormOptions?.rememberKey
+    ? useRemember({} as Partial<Record<keyof TForm, string>>, `${useFormOptions?.rememberKey}:errors`)
     : useState({} as Partial<Record<keyof TForm, string>>)
   const [hasErrors, setHasErrors] = useState(false)
   const [processing, setProcessing] = useState(false)
   const [progress, setProgress] = useState(null)
   const [wasSuccessful, setWasSuccessful] = useState(false)
   const [recentlySuccessful, setRecentlySuccessful] = useState(false)
-  let transform = (data) => data
 
   useEffect(() => {
     isMounted.current = true
@@ -157,13 +154,15 @@ export default function useForm<TForm extends FormDataType>(
         },
       }
 
+      const transformedData = useFormOptions?.transform?.(data, method) || data
+
       if (method === 'delete') {
-        router.delete(url, { ..._options, data: transform(data) })
+        router.delete(url, { ..._options, data: transformedData })
       } else {
-        router[method](url, transform(data), _options)
+        router[method](url, transformedData, _options)
       }
     },
-    [data, setErrors, transform],
+    [data, setErrors, useFormOptions.transform],
   )
 
   return {
@@ -184,9 +183,6 @@ export default function useForm<TForm extends FormDataType>(
     progress,
     wasSuccessful,
     recentlySuccessful,
-    transform(callback) {
-      transform = callback
-    },
     setDefaults(fieldOrFields?: keyof TForm | Partial<TForm>, maybeValue?: FormDataConvertible) {
       if (typeof fieldOrFields === 'undefined') {
         setDefaults(() => data)

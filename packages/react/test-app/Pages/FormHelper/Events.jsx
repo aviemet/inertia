@@ -31,7 +31,9 @@ const callbacks = (overrides = {}) => ({
 })
 
 export default (props) => {
-  const form = useForm({ name: 'foo', remember: false })
+  const form = useForm({ name: 'foo', remember: false }, { transform: (data) => {
+    return { ...data, file: new File(['foo'], 'example.bin') }
+  } })
 
   const page = usePage()
 
@@ -106,10 +108,6 @@ export default (props) => {
   }
 
   const onProgressVisit = () => {
-    form.transform((data) => {
-      return { ...data, file: new File(['foobar'], 'example.bin') }
-    })
-
     form.post('/dump/post', {
       ...callbacks({
         onProgress: (event) => {
@@ -189,15 +187,10 @@ export default (props) => {
   }
 
   const onSuccessProgress = () => {
-    form.transform((data) => ({ ...data, file: new File(['foo'], 'example.bin') }))
     form.post('/sleep', callbacks())
   }
 
   const onErrorProgress = () => {
-    form.transform((data) => ({
-      ...data,
-      file: new File(['foobar'], 'example.bin'),
-    }))
     form.post('/form-helper/events/errors', callbacks())
   }
 

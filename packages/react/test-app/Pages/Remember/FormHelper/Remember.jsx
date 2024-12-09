@@ -2,7 +2,7 @@ import { Link, useForm } from '@inertiajs/react'
 import { useState } from 'react'
 
 export default (props) => {
-  const form = useForm('form', { name: 'foo', handle: 'example', remember: false })
+  const form = useForm({ name: 'foo', handle: 'example', remember: false }, { rememberKey: 'form'})
   const [untracked, setUntracked] = useState('')
 
   const submit = () => {
