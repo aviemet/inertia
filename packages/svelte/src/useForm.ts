@@ -16,6 +16,10 @@ import isEqual from 'lodash/isEqual'
 import { writable, type Writable } from 'svelte/store'
 
 type FormDataType = Record<string, FormDataConvertible>
+type UseFormOptions<TForm> = {
+  rememberKey?: string
+  transform?: (data: TForm, method: Method) => object
+}
 
 export interface InertiaFormProps<TForm extends FormDataType> {
   isDirty: boolean
@@ -28,7 +32,6 @@ export interface InertiaFormProps<TForm extends FormDataType> {
   setStore(data: TForm): void
   setStore(key: keyof TForm, value?: FormDataConvertible): void
   data(): TForm
-  transform(callback: (data: TForm) => object): this
   defaults(): this
   defaults(fields: Partial<TForm>): this
   defaults(field?: keyof TForm, value?: FormDataConvertible): this
@@ -47,25 +50,19 @@ export interface InertiaFormProps<TForm extends FormDataType> {
 
 export type InertiaForm<TForm extends FormDataType> = InertiaFormProps<TForm> & TForm
 
-export default function useForm<TForm extends FormDataType>(data: TForm | (() => TForm)): Writable<InertiaForm<TForm>>
 export default function useForm<TForm extends FormDataType>(
-  rememberKey: string,
-  data: TForm | (() => TForm),
-): Writable<InertiaForm<TForm>>
-export default function useForm<TForm extends FormDataType>(
-  rememberKeyOrData: string | TForm | (() => TForm),
-  maybeData?: TForm | (() => TForm),
+  initialValues: TForm | (() => TForm),
+  useFormOptions: UseFormOptions<TForm>  = {
+    transform: (data) => data as object
+  }
 ): Writable<InertiaForm<TForm>> {
-  const rememberKey = typeof rememberKeyOrData === 'string' ? rememberKeyOrData : null
-  const inputData = typeof rememberKeyOrData === 'string' ? maybeData : rememberKeyOrData
-  const data: TForm = typeof inputData === 'function' ? inputData() : (inputData as TForm)
-  const restored = rememberKey
-    ? (router.restore(rememberKey) as { data: TForm; errors: Record<keyof TForm, string> } | null)
+  const data: TForm = typeof initialValues === 'function' ? initialValues() : initialValues
+  const restored = useFormOptions?.rememberKey
+    ? (router.restore(useFormOptions?.rememberKey) as { data: TForm; errors: Record<keyof TForm, string> } | null)
     : null
   let defaults = cloneDeep(data)
   let cancelToken: { cancel: () => void } | null = null
   let recentlySuccessfulTimeoutId: ReturnType<typeof setTimeout> | null = null
-  let transform = (data: TForm) => data as object
 
   const store = writable<InertiaForm<TForm>>({
     ...(restored ? restored.data : data),
@@ -86,10 +83,6 @@ export default function useForm<TForm extends FormDataType>(
         carry[key] = this[key]
         return carry
       }, {} as FormDataType) as TForm
-    },
-    transform(callback) {
-      transform = callback
-      return this
     },
     defaults(fieldOrFields?: keyof TForm | Partial<TForm>, maybeValue?: FormDataConvertible) {
       defaults =
@@ -141,7 +134,7 @@ export default function useForm<TForm extends FormDataType>(
       return this
     },
     submit(method, url, options: Partial<VisitOptions> = {}) {
-      const data = transform(this.data()) as RequestPayload
+      const data = (useFormOptions?.transform?.(this.data(), method) || this.data()) as RequestPayload
       const _options: Omit<VisitOptions, 'method'> = {
         ...options,
         onCancelToken: (token: { cancel: () => void }) => {
@@ -252,8 +245,8 @@ export default function useForm<TForm extends FormDataType>(
       form.setStore('hasErrors', !form.hasErrors)
     }
 
-    if (rememberKey) {
-      router.remember({ data: form.data(), errors: form.errors }, rememberKey)
+    if (useFormOptions?.rememberKey) {
+      router.remember({ data: form.data(), errors: form.errors }, useFormOptions?.rememberKey)
     }
   })
 

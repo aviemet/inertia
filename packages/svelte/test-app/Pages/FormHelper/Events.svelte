@@ -7,6 +7,11 @@
   const form = useForm({
     name: 'foo',
     remember: false,
+  }, {
+    transform: (data) => ({
+        ...data,
+        file: new File(['foobar'], 'example.bin'),
+      })
   })
 
   const pushEvent = (message) => {
@@ -132,10 +137,6 @@
 
   const onProgressVisit = () => {
     $form
-      .transform((data) => ({
-        ...data,
-        file: new File(['foobar'], 'example.bin'),
-      }))
       .post('/dump/post', {
         ...callbacks({
           onProgress: (event) => {
@@ -265,10 +266,6 @@
 
   const onSuccessProgress = () => {
     $form
-      .transform((data) => ({
-        ...data,
-        file: new File(['foobar'], 'example.bin'),
-      }))
       .post('/sleep', {
         ...callbacks({
           onBefore: () => {
@@ -301,10 +298,6 @@
 
   const onErrorProgress = () => {
     $form
-      .transform((data) => ({
-        ...data,
-        file: new File(['foobar'], 'example.bin'),
-      }))
       .post('/form-helper/events/errors', {
         ...callbacks({
           onBefore: () => {

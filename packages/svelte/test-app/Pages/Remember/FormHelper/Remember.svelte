@@ -1,13 +1,15 @@
 <script>
   import { inertia, useForm } from '@inertiajs/svelte'
 
-  const form = useForm('form', {
+  const form = useForm({
     name: 'foo',
     handle: 'example',
     remember: false,
+  }, {
+    rememberKey: 'form'
   })
 
-  let untracked = ''
+  let untracked = '' 
 
   const submit = () => {
     $form.post('/remember/form-helper/remember')

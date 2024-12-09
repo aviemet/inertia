@@ -1,45 +1,34 @@
 <script>
   import { useForm } from '@inertiajs/svelte'
 
+  const methodNameTransforms = {
+    post: 'bar',
+    put: 'baz',
+    patch: 'foo',
+    delete: 'bar'
+  }
+
   const form = useForm({
     name: 'foo',
     remember: false,
+  }, { 
+    transform: (data, method) => ({ ...data, name: methodNameTransforms[method]})
   })
 
   const postForm = () => {
-    $form
-      .transform((data) => ({
-        ...data,
-        name: 'bar',
-      }))
-      .post('/dump/post')
+    $form.post('/dump/post')
   }
 
   const putForm = () => {
-    $form
-      .transform((data) => ({
-        ...data,
-        name: 'baz',
-      }))
-      .put('/dump/put')
+    $form.put('/dump/put')
   }
 
   const patchForm = () => {
-    $form
-      .transform((data) => ({
-        ...data,
-        name: 'foo',
-      }))
-      .patch('/dump/patch')
+    $form.patch('/dump/patch')
   }
 
   const deleteForm = () => {
-    $form
-      .transform((data) => ({
-        ...data,
-        name: 'bar',
-      }))
-      .delete('/dump/delete')
+    $form.delete('/dump/delete')
   }
 </script>
 
