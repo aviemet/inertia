@@ -2,10 +2,12 @@ import { Head, useForm } from '@inertiajs/react'
 import Layout from '../Components/Layout'
 
 const Form = () => {
-  const form = useForm('NewUser', {
+  const form = useForm({
     name: '',
     company: '',
     role: '',
+  }, {
+    rememberKey: 'NewUser'
   })
 
   function submit(e) {
@@ -17,9 +19,9 @@ const Form = () => {
     <>
       <Head title="Form" />
       <h1 className="text-3xl">Form</h1>
-      <form onSubmit={submit} className="mt-6 max-w-md space-y-4">
+      <form onSubmit={submit} className="max-w-md mt-6 space-y-4">
         {form.isDirty && (
-          <div className="my-5 rounded border border-amber-100 bg-amber-50 p-3 text-amber-800">
+          <div className="border-amber-100 bg-amber-50 text-amber-800 p-3 my-5 border rounded">
             There are unsaved changes!
           </div>
         )}
@@ -32,7 +34,7 @@ const Form = () => {
             value={form.data.name}
             onChange={(e) => form.setData('name', e.target.value)}
             id="name"
-            className="mt-1 w-full appearance-none rounded border px-2 py-1 shadow-sm"
+            className="w-full px-2 py-1 mt-1 border rounded shadow-sm appearance-none"
           />
           {form.errors.name && <div className="mt-2 text-sm text-red-600">{form.errors.name}</div>}
         </div>
@@ -45,7 +47,7 @@ const Form = () => {
             value={form.data.company}
             onChange={(e) => form.setData('company', e.target.value)}
             id="company"
-            className="mt-1 w-full appearance-none rounded border px-2 py-1 shadow-sm"
+            className="w-full px-2 py-1 mt-1 border rounded shadow-sm appearance-none"
           />
           {form.errors.company && <div className="mt-2 text-sm text-red-600">{form.errors.company}</div>}
         </div>
@@ -57,7 +59,7 @@ const Form = () => {
             value={form.data.role}
             onChange={(e) => form.setData('role', e.target.value)}
             id="role"
-            className="mt-1 w-full appearance-none rounded border px-2 py-1 shadow-sm"
+            className="w-full px-2 py-1 mt-1 border rounded shadow-sm appearance-none"
           >
             <option></option>
             <option>User</option>
@@ -67,7 +69,7 @@ const Form = () => {
           {form.errors.role && <div className="mt-2 text-sm text-red-600">{form.errors.role}</div>}
         </div>
         <div className="flex gap-4">
-          <button type="submit" disabled={form.processing} className="rounded bg-slate-800 px-6 py-2 text-white">
+          <button type="submit" disabled={form.processing} className="bg-slate-800 px-6 py-2 text-white rounded">
             Submit
           </button>
           <button type="button" onClick={() => form.reset()}>
