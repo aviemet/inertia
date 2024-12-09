@@ -1,44 +1,39 @@
 <script setup>
 import { useForm } from '@inertiajs/vue3'
 
+const methodNameTransforms = {
+  post: 'bar',
+  put: 'baz',
+  patch: 'foo',
+  delete: 'bar'
+}
+
 const form = useForm({
   name: 'foo',
   remember: false,
+}, {
+  transform: (data, method) => {
+    return { ...data, name: methodNameTransforms[method] }
+  }
 })
 
 const postForm = () => {
   form
-    .transform((data) => ({
-      ...data,
-      name: 'bar',
-    }))
     .post('/dump/post')
 }
 
 const putForm = () => {
   form
-    .transform((data) => ({
-      ...data,
-      name: 'baz',
-    }))
     .put('/dump/put')
 }
 
 const patchForm = () => {
   form
-    .transform((data) => ({
-      ...data,
-      name: 'foo',
-    }))
     .patch('/dump/patch')
 }
 
 const deleteForm = () => {
   form
-    .transform((data) => ({
-      ...data,
-      name: 'bar',
-    }))
     .delete('/dump/delete')
 }
 </script>

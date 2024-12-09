@@ -2,10 +2,12 @@
 import { Link, useForm } from '@inertiajs/vue3'
 import { ref } from 'vue'
 
-const form = useForm('form', {
+const form = useForm({
   name: 'foo',
   handle: 'example',
   remember: false,
+}, {
+  rememberKey: 'form'
 })
 
 const untracked = ref('')

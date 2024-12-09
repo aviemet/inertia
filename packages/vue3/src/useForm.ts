@@ -4,6 +4,10 @@ import isEqual from 'lodash.isequal'
 import { reactive, watch } from 'vue'
 
 type FormDataType = object
+type UseFormOptions<TForm> = {
+  rememberKey?: string
+  transform?: (data: TForm, method: Method) => object
+}
 
 interface InertiaFormProps<TForm extends FormDataType> {
   isDirty: boolean
@@ -14,7 +18,6 @@ interface InertiaFormProps<TForm extends FormDataType> {
   wasSuccessful: boolean
   recentlySuccessful: boolean
   data(): TForm
-  transform(callback: (data: TForm) => object): this
   defaults(): this
   defaults(field: keyof TForm, value: FormDataConvertible): this
   defaults(fields: Partial<TForm>): this
@@ -33,24 +36,19 @@ interface InertiaFormProps<TForm extends FormDataType> {
 
 export type InertiaForm<TForm extends FormDataType> = TForm & InertiaFormProps<TForm>
 
-export default function useForm<TForm extends FormDataType>(data: TForm | (() => TForm)): InertiaForm<TForm>
 export default function useForm<TForm extends FormDataType>(
-  rememberKey: string,
-  data: TForm | (() => TForm),
-): InertiaForm<TForm>
-export default function useForm<TForm extends FormDataType>(
-  rememberKeyOrData: string | TForm | (() => TForm),
-  maybeData?: TForm | (() => TForm),
+  initialValues: TForm | (() => TForm),
+  useFormOptions: UseFormOptions<TForm>  = {
+    transform: (data) => data
+  }
 ): InertiaForm<TForm> {
-  const rememberKey = typeof rememberKeyOrData === 'string' ? rememberKeyOrData : null
-  const data = typeof rememberKeyOrData === 'string' ? maybeData : rememberKeyOrData
-  const restored = rememberKey
-    ? (router.restore(rememberKey) as { data: TForm; errors: Record<keyof TForm, string> })
+  const data = initialValues
+  const restored = useFormOptions?.rememberKey
+    ? (router.restore(useFormOptions?.rememberKey) as { data: TForm; errors: Record<keyof TForm, string> })
     : null
   let defaults = typeof data === 'object' ? cloneDeep(data) : cloneDeep(data())
   let cancelToken = null
   let recentlySuccessfulTimeoutId = null
-  let transform = (data) => data
 
   const form = reactive({
     ...(restored ? restored.data : cloneDeep(defaults)),
@@ -66,11 +64,6 @@ export default function useForm<TForm extends FormDataType>(
         carry[key] = this[key]
         return carry
       }, {} as Partial<TForm>) as TForm
-    },
-    transform(callback) {
-      transform = callback
-
-      return this
     },
     defaults(fieldOrFields?: keyof TForm | Partial<TForm>, maybeValue?: FormDataConvertible) {
       if (typeof data === 'function') {
@@ -127,7 +120,6 @@ export default function useForm<TForm extends FormDataType>(
       return this
     },
     submit(method, url, options: VisitOptions = {}) {
-      const data = transform(this.data())
       const _options = {
         ...options,
         onCancelToken: (token) => {
@@ -201,10 +193,12 @@ export default function useForm<TForm extends FormDataType>(
         },
       }
 
+      const transformedData = useFormOptions?.transform?.(this.data, method) || this.data
+
       if (method === 'delete') {
-        router.delete(url, { ..._options, data })
+        router.delete(url, { ..._options, data: transformedData })
       } else {
-        router[method](url, data, _options)
+        router[method](url, transformedData, _options)
       }
     },
     get(url, options) {
@@ -227,7 +221,7 @@ export default function useForm<TForm extends FormDataType>(
         cancelToken.cancel()
       }
     },
-    __rememberable: rememberKey === null,
+    __rememberable: useFormOptions?.rememberKey === null,
     __remember() {
       return { data: this.data(), errors: this.errors }
     },
@@ -241,8 +235,8 @@ export default function useForm<TForm extends FormDataType>(
     form,
     (newValue) => {
       form.isDirty = !isEqual(form.data(), defaults)
-      if (rememberKey) {
-        router.remember(cloneDeep(newValue.__remember()), rememberKey)
+      if (useFormOptions?.rememberKey) {
+        router.remember(cloneDeep(newValue.__remember()), useFormOptions.rememberKey)
       }
     },
     { immediate: true, deep: true },
